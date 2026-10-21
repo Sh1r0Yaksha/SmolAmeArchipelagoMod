@@ -11,6 +11,7 @@
 /[Oo]bj/
 /[Bb]uild/
 /[Bb]uilds/
+/[Bb]in/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 *.log
@@ -107,3 +108,6 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Dependency Packages
+/[Pp]ackages
