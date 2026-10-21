@@ -100,6 +100,12 @@ namespace SmolAmeArchipelago
             }
         }
 
+        public static void ReceiveItemsList()
+        {
+            
+            
+        }
+
         private static void OnSocketOpened()
         {
             ArchipelagoPlugin.Log.LogInfo(
