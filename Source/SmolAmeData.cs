@@ -5,6 +5,9 @@ namespace SmolAmeArchipelagoMod.Source
 {
     internal static class SmolAmeData
     {
+        internal static int MOMButtonsPressed = 0;
+        internal static int TotalMOMButtons => CommonNametoGameName.Count - 1;
+
         internal static Dictionary<string, Dictionary<string, string>> AreaItems;
 
         internal static Dictionary<string, string> CommonNametoGameName = 
