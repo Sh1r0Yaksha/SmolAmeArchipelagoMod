@@ -27,6 +27,8 @@ namespace SmolAmeArchipelagoMod.Source
                     SmolAmeClient.Session.Items.ItemReceived += ReceivedItem;
                 }
                 ArchipelagoPlugin.Log.LogInfo($"[Archipelago Client] Connection result: {tryConnect}");
+
+                CollectReceivedItems();
             }
             catch (Exception ex)
             {
@@ -37,8 +39,23 @@ namespace SmolAmeArchipelagoMod.Source
         private static void ReceivedItem(ReceivedItemsHelper helper)
         {
             ItemInfo recieved = helper.DequeueItem();
+            PutReceivedItemInSmolAme(recieved);
+            
+        }
 
-            string[] parts = recieved.LocationName.Split(new[] { '-' }, 2);
+        static void CollectReceivedItems()
+        {
+            var items = SmolAmeClient.Session.Items.AllItemsReceived;
+
+            foreach (var item in items)
+            {
+                PutReceivedItemInSmolAme(item);
+            }
+        }
+
+        static void PutReceivedItemInSmolAme(ItemInfo item)
+        {
+            string[] parts = item.LocationName.Split(new[] { '-' }, 2);
 
             if (parts.Length == 2)
             {
