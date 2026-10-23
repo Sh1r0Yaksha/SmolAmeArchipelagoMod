@@ -45,8 +45,10 @@ namespace SmolAmeArchipelagoMod.Source
                 { "Pettan",                     15 },
             };
 
+        internal static Dictionary<string, Dictionary<string, bool>> AreaItemCollected;
         internal static Dictionary<string, Dictionary<string, bool>> AreaLocationCollected;
 
         internal static Dictionary<string, int> LocationNameToID;
+        internal static Dictionary<int, string> LocationIDToName;
     }
 }

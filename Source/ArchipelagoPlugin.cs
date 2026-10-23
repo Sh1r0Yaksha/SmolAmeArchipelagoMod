@@ -18,10 +18,11 @@ namespace SmolAmeArchipelago
     {
         public const string GUID = "com.Shir0Yaksha.SmolAmeArchipelagoMod";
         public const string NAME = "Smol Ame Archipelago Plugin";
-        public const string VERSION = "0.1.1";
+        public const string VERSION = "0.2.0";
 
         internal static ManualLogSource Log;
 
+        internal static RandomizerPatches RandomizerPatches;
 
         private Harmony Harmony;
 
@@ -34,6 +35,14 @@ namespace SmolAmeArchipelago
             SmolAmeData.AreaItems = JsonConvert.DeserializeObject<
                 Dictionary<string, Dictionary<string, string>>
             >(AreaItemsJSON);
+
+            SmolAmeData.AreaItemCollected = SmolAmeData.AreaItems.ToDictionary(
+                area => area.Key,
+                area => area.Value.Keys.ToDictionary(
+                    item => item,
+                    item => false
+                )
+            );
 
             SmolAmeData.AreaLocationCollected = SmolAmeData.AreaItems.ToDictionary(
                 area => area.Key,
@@ -59,11 +68,15 @@ namespace SmolAmeArchipelago
                 })
                 .ToDictionary(location => location.Name, location => location.ID);
 
+            SmolAmeData.LocationIDToName =
+                SmolAmeData.LocationNameToID
+                    .ToDictionary(location => location.Value, location => location.Key);
+
             Log.LogInfo($"[Archipelago Client]JSON Loaded");
 
             GameObject ArchipelagoClient = new GameObject("ArchipelagoClient");
             ArchipelagoClient.AddComponent<ArchipelagoClientScript>();
-            ArchipelagoClient.AddComponent<RandomizerPatches>();
+            RandomizerPatches = ArchipelagoClient.AddComponent<RandomizerPatches>();
 
             DontDestroyOnLoad( ArchipelagoClient );
 

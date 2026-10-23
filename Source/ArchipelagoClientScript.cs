@@ -29,6 +29,7 @@ namespace SmolAmeArchipelagoMod.Source
                 ArchipelagoPlugin.Log.LogInfo($"[Archipelago Client] Connection result: {tryConnect}");
 
                 CollectReceivedItems();
+                CollectCompletedLocations();
             }
             catch (Exception ex)
             {
@@ -40,7 +41,7 @@ namespace SmolAmeArchipelagoMod.Source
         {
             ItemInfo recieved = helper.DequeueItem();
             PutReceivedItemInSmolAme(recieved);
-            
+            ArchipelagoPlugin.RandomizerPatches.OnItemReceived();
         }
 
         static void CollectReceivedItems()
@@ -53,9 +54,38 @@ namespace SmolAmeArchipelagoMod.Source
             }
         }
 
+        public static void CollectCompletedLocations()
+        {
+            var locations = SmolAmeClient.Session.Locations.AllLocationsChecked;
+
+            foreach (Int64 location in locations)
+            {
+                var locationName =  SmolAmeData.LocationIDToName[(int)location];
+                PutReceivedLocationInSmolAme(locationName);
+            }
+        }
+
         static void PutReceivedItemInSmolAme(ItemInfo item)
         {
-            string[] parts = item.LocationName.Split(new[] { '-' }, 2);
+            string[] parts = item.ItemName.Split(new[] { '-' }, 2);
+
+            if (parts.Length == 2)
+            {
+                string regionName = parts[0];
+                string itemName = parts[1];
+
+                SmolAmeData.AreaItemCollected[regionName][itemName] = true;
+                ArchipelagoPlugin.Log.LogInfo($"Received {item} in {regionName}");
+            }
+            else
+            {
+                ArchipelagoPlugin.Log.LogInfo("[Archipelago Client] Item received but cannot parse its region and item name");
+            }
+        }
+
+        static void PutReceivedLocationInSmolAme(string locationName)
+        {
+            string[] parts = locationName.Split(new[] { '-' }, 2);
 
             if (parts.Length == 2)
             {
@@ -63,6 +93,7 @@ namespace SmolAmeArchipelagoMod.Source
                 string location = parts[1];
 
                 SmolAmeData.AreaLocationCollected[regionName][location] = true;
+                ArchipelagoPlugin.Log.LogInfo($"Received {location} in {regionName}");
             }
             else
             {

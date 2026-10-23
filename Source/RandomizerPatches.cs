@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Runtime.Remoting.Messaging;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 
 namespace Smol_Ame_Archipelago
@@ -17,6 +18,7 @@ namespace Smol_Ame_Archipelago
         // Item Name: "{region_name}-{item_name}"
         // Location Name: "{region_name}-{location_name}"
         static string RegionName;
+        Dictionary<string, bool> ItemsCollectedInTheRegion;
         Dictionary<string, bool> LocationsCollectedInTheRegion;
         TokenScript[] Bubba;
         BoxCollider2D[] Buttons;
@@ -38,7 +40,7 @@ namespace Smol_Ame_Archipelago
         private void OnSceneLoaded(Scene Scene, LoadSceneMode mode)
         {
             RegionName = null;
-            LocationsCollectedInTheRegion = null;
+            ItemsCollectedInTheRegion = null;
             Bubba = null;
             Buttons = null;
             MOMButtonPressed = false;
@@ -85,10 +87,10 @@ namespace Smol_Ame_Archipelago
 
                 // Disable the collider until its location is collected.
                 if (Buttons[i] != null)
-                    Buttons[i].enabled = false;
+                    ChangeMOMButtonCollectedState(Buttons[i], false);
             }
 
-            MOMButtonPressed = false;
+            OnItemReceived();
 
             // Ensure the region location data exists.
             if (SmolAmeData.AreaLocationCollected == null ||
@@ -103,6 +105,8 @@ namespace Smol_Ame_Archipelago
             ArchipelagoPlugin.Log.LogInfo(
                 $"Loaded {LocationsCollectedInTheRegion.Count} locations " +
                 $"for region: {RegionName}");
+
+            ArchipelagoClientScript.CollectCompletedLocations();
 
             // Apply locations that have already been collected.
             foreach (var location in LocationsCollectedInTheRegion)
@@ -135,21 +139,6 @@ namespace Smol_Ame_Archipelago
                     case "Stache Quota":
                         SetStacheQuota(true);
                         break;
-
-                    case "MOM Button":
-                        // This assumes Buttons[0] is the MOM Button.
-                        // Replace this with the actual MOM Button reference
-                        // if multiple level-clear buttons exist.
-                        if (Buttons.Length > 0 && Buttons[0] != null)
-                        {
-                            Buttons[0].enabled = true;
-                        }
-                        else
-                        {
-                            ArchipelagoPlugin.Log.LogWarning(
-                                "MOM Button collider was not found.");
-                        }
-                        break;
                 }
             }
 
@@ -162,46 +151,12 @@ namespace Smol_Ame_Archipelago
 
         void Update()
         {
-            if (string.IsNullOrEmpty(RegionName))
+            if (string.IsNullOrEmpty(RegionName) ||
+                LocationsCollectedInTheRegion == null ||
+                LevelManager.levelManager == null ||
+                SmolAmeClient.Session == null)
                 return;
 
-            if (SmolAmeData.AreaLocationCollected == null ||
-                !SmolAmeData.AreaLocationCollected.TryGetValue(
-                RegionName, out var regionLocations))
-            {
-                return; 
-            }
-
-            LocationsCollectedInTheRegion = regionLocations;
-
-
-            if (Buttons == null)
-            {
-                ArchipelagoPlugin.Log.LogWarning("[Archipelago Client] Can't find Buttons in the Level");
-                return;
-            }
-
-            if (LevelManager.levelManager == null)
-                return;
-
-            if (SmolAmeClient.Session == null)
-                return;
-
-            
-
-            // Receive Important Checks in Real Time:
-            if (LocationsCollectedInTheRegion.TryGetValue("MOM Button", out bool momCollected))
-                {
-                if (Buttons.Length > 0)
-                {
-                    Buttons[0].enabled = momCollected;
-                }
-                else
-                {
-                    ArchipelagoPlugin.Log.LogWarning("[Archipelago Client] No Button Items were found");
-                }
-                
-            }
 
             // Sending Bubba Checks
             for (int i = 0; i < 3; i++)
@@ -216,6 +171,7 @@ namespace Smol_Ame_Archipelago
                             coinName, out bool alreadyCollected) &&
                             !alreadyCollected)
                         {
+                            LocationsCollectedInTheRegion[coinName] = true;
                             SendLocationCheck(locationName);
                         }
                     }
@@ -230,6 +186,7 @@ namespace Smol_Ame_Archipelago
                         stacheQuota, out bool alreadyCollected) &&
                     !alreadyCollected)
                     {
+                        LocationsCollectedInTheRegion[stacheQuota] = true;
                         SendLocationCheck(locationName);
                     }
 
@@ -237,6 +194,42 @@ namespace Smol_Ame_Archipelago
             }
             // Sending Stache Quota Checks
             CheckMomButtonPressed();
+        }
+
+        public void OnItemReceived()
+        {
+            if (string.IsNullOrEmpty(RegionName))
+                return;
+
+            if (SmolAmeData.AreaItemCollected == null ||
+                !SmolAmeData.AreaItemCollected.TryGetValue(
+                RegionName, out var regionItems))
+            {
+                return;
+            }
+
+            ItemsCollectedInTheRegion = regionItems;
+
+
+            if (Buttons == null)
+            {
+                ArchipelagoPlugin.Log.LogWarning("[Archipelago Client] Can't find Buttons in the Level");
+                return;
+            }
+
+            if (LevelManager.levelManager == null)
+                return;
+
+            if (SmolAmeClient.Session == null)
+                return;
+
+            if (Buttons.Length > 0 &&
+                ItemsCollectedInTheRegion.TryGetValue("MOM Button 1", out bool mom1Collected))
+                ChangeMOMButtonCollectedState(Buttons[0], mom1Collected);
+
+            if (Buttons.Length > 1 &&
+                ItemsCollectedInTheRegion.TryGetValue("MOM Button 2", out bool mom2Collected))
+                ChangeMOMButtonCollectedState(Buttons[1], mom2Collected);
         }
 
         void SendLocationCheck(string locationName)
@@ -261,7 +254,7 @@ namespace Smol_Ame_Archipelago
 
         string GetRegionName(string sceneName)
         {
-            return SmolAmeData.GameNametoCommonName[sceneName];
+            return SmolAmeData.GameNametoCommonName.TryGetValue(sceneName, out var name) ? name : null;
         }
 
         private static readonly FieldInfo DeadField =
@@ -287,38 +280,48 @@ namespace Smol_Ame_Archipelago
             DeadField.SetValue(Bubba[index], value);
         }
 
+        private void ChangeMOMButtonCollectedState(BoxCollider2D button, bool collected)
+        {
+            if (button == null) return;
+
+            button.enabled = collected;
+            foreach (var renderer in button.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.enabled = collected;
+            }
+        }
         private void CheckMomButtonPressed()
         {
-            if (MOMButtonPressed ||
-                Buttons == null || 
-                VictoryField == null)
+            if (Buttons == null || VictoryField == null)
                 return;
 
-            if (!LocationsCollectedInTheRegion.TryGetValue(
-        "MOM Button", out bool momCollected) || momCollected)
+            CheckMomButton(0, "MOM Button 1");
+            CheckMomButton(1, "MOM Button 2");
+        }
+
+        private void CheckMomButton(int index, string buttonName)
+        {
+            if (index >= Buttons.Length || Buttons[index] == null)
                 return;
 
-            string locationName = $"{RegionName}-MOM Button";
+            if (!LocationsCollectedInTheRegion.TryGetValue(buttonName, out bool alreadyCollected) ||
+                alreadyCollected)
+                return;
 
-            foreach (var button in Buttons)
-            {
-                if (button == null)
-                    continue;
+            var levelButton = Buttons[index].GetComponent<LevelClearButton>();
+            if (levelButton == null || !(bool)VictoryField.GetValue(levelButton))
+                return;
 
-                bool victory = (bool)VictoryField.GetValue(button.GetComponent<LevelClearButton>());
-
-                if (victory)
-                {
-                    SendLocationCheck(locationName);
-                    MOMButtonPressed = true;
-                    SmolAmeData.MOMButtonsPressed++;
-                    break;
-                }
-            }
+            LocationsCollectedInTheRegion[buttonName] = true;
+            SendLocationCheck($"{RegionName}-{buttonName}");
+            MOMButtonPressed = true;
+            SmolAmeData.MOMButtonsPressed++;
         }
 
         void SetStacheQuota(bool value)
         {
+            if (LevelManager.levelManager == null) return;
+
             if (value)
             {
                 LevelManager.levelManager.collectedMoustaches = LevelManager.levelManager.moustacheQuotaInt;
