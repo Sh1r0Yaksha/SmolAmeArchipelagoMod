@@ -100,11 +100,6 @@ namespace SmolAmeArchipelago
             }
         }
 
-        public static void ReceiveItemsList()
-        {
-            
-            
-        }
 
         private static void OnSocketOpened()
         {

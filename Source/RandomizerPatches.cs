@@ -21,11 +21,8 @@ namespace Smol_Ame_Archipelago
         Dictionary<string, bool> ItemsCollectedInTheRegion;
         Dictionary<string, bool> LocationsCollectedInTheRegion;
         TokenScript[] Bubba;
-        BoxCollider2D[] Buttons;
-        bool MOMButtonPressed;
-
-        //private static LevelClearButton TargetMOMButton;
-        //private static bool MOMButtonPoundDisabled;
+        LevelClearButton[] MOMButtons;
+        //BoxCollider2D[] Colliders;
 
         void Awake() 
         {
@@ -42,12 +39,9 @@ namespace Smol_Ame_Archipelago
             RegionName = null;
             ItemsCollectedInTheRegion = null;
             Bubba = null;
-            Buttons = null;
-            MOMButtonPressed = false;
+            //Colliders = null;
 
             StartCoroutine(InitializeRegion(Scene.name));
-
-            
         }
 
 
@@ -72,23 +66,54 @@ namespace Smol_Ame_Archipelago
             Bubba = FindObjectsOfType<TokenScript>();
 
             // Find level-clear buttons and their colliders.
-            LevelClearButton[] levelButtons =
-                FindObjectsOfType<LevelClearButton>();
+            MOMButtons = FindObjectsOfType<LevelClearButton>();
 
-            Buttons = new BoxCollider2D[levelButtons.Length];
-
-            for (int i = 0; i < levelButtons.Length; i++)
+            // Process MOM buttons.
+            foreach (var button in MOMButtons)
             {
-                Buttons[i] = levelButtons[i].GetComponent<BoxCollider2D>();
+                if (button == null)
+                    continue;
+
+                BoxCollider2D collider = button.GetComponent<BoxCollider2D>();
+
+                if (collider == null)
+                {
+                    ArchipelagoPlugin.Log.LogWarning(
+                        $"No BoxCollider2D found on MOM button: {button.name}");
+                    continue;
+                }
+
+                //Colliders[colliderIndex++] = collider;
 
                 ArchipelagoPlugin.Log.LogInfo(
-                    $"Found level button [{i}]: " +
-                    $"{levelButtons[i].gameObject.name}");
+                    $"Found Collider for Gameobject: {button.gameObject.name}");
 
-                // Disable the collider until its location is collected.
-                if (Buttons[i] != null)
-                    ChangeMOMButtonCollectedState(Buttons[i], false);
+                ChangeColliderState(collider, false);
             }
+
+            // Process Bubba tokens.
+            foreach (var token in Bubba)
+            {
+                if (token == null)
+                    continue;
+
+                CircleCollider2D collider = token.GetComponent<CircleCollider2D>();
+
+                if (collider == null)
+                {
+                    ArchipelagoPlugin.Log.LogWarning(
+                        $"No CircleCollider2D found on Bubba token: {token.name}");
+                    continue;
+                }
+
+
+                ArchipelagoPlugin.Log.LogInfo(
+                    $"Found Collider for Gameobject: {token.gameObject.name}");
+
+                ChangeColliderState(collider, false);
+            }
+
+
 
             OnItemReceived();
 
@@ -210,26 +235,56 @@ namespace Smol_Ame_Archipelago
 
             ItemsCollectedInTheRegion = regionItems;
 
-
-            if (Buttons == null)
-            {
-                ArchipelagoPlugin.Log.LogWarning("[Archipelago Client] Can't find Buttons in the Level");
-                return;
-            }
-
             if (LevelManager.levelManager == null)
                 return;
 
             if (SmolAmeClient.Session == null)
                 return;
 
-            if (Buttons.Length > 0 &&
-                ItemsCollectedInTheRegion.TryGetValue("MOM Button 1", out bool mom1Collected))
-                ChangeMOMButtonCollectedState(Buttons[0], mom1Collected);
+            if (MOMButtons != null && MOMButtons.Length > 0 &&
+                MOMButtons[0] != null &&
+                ItemsCollectedInTheRegion.TryGetValue(
+                    "MOM Button 1", out bool mom1Collected))
+            {
+                ChangeColliderState(
+                    MOMButtons[0].GetComponent<BoxCollider2D>(),
+                    mom1Collected);
+            }
 
-            if (Buttons.Length > 1 &&
-                ItemsCollectedInTheRegion.TryGetValue("MOM Button 2", out bool mom2Collected))
-                ChangeMOMButtonCollectedState(Buttons[1], mom2Collected);
+            if (MOMButtons != null && MOMButtons.Length > 1 &&
+                MOMButtons[1] != null &&
+                ItemsCollectedInTheRegion.TryGetValue(
+                    "MOM Button 2", out bool mom2Collected))
+            {
+                ChangeColliderState(
+                    MOMButtons[1].GetComponent<BoxCollider2D>(),
+                    mom2Collected);
+            }
+
+            // Enable or disable Bubba coins.
+            if (Bubba == null)
+                return;
+
+            for (int i = 0; i < Bubba.Length && i < 3; i++)
+            {
+                if (Bubba[i] == null)
+                    continue;
+
+                string itemName = $"Bubba Coin {i + 1}";
+
+                if (ItemsCollectedInTheRegion.TryGetValue(
+                    itemName, out bool coinReceived))
+                {
+                    ChangeColliderState(
+                        Bubba[i].GetComponent<CircleCollider2D>(),
+                        coinReceived);
+                }
+            }
+        }
+
+        string GetRegionName(string sceneName)
+        {
+            return SmolAmeData.GameNametoCommonName.TryGetValue(sceneName, out var name) ? name : null;
         }
 
         void SendLocationCheck(string locationName)
@@ -252,9 +307,15 @@ namespace Smol_Ame_Archipelago
             SmolAmeClient.Session.Locations.CompleteLocationChecks(id);
         }
 
-        string GetRegionName(string sceneName)
+        private void ChangeColliderState(Collider2D collider, bool collected)
         {
-            return SmolAmeData.GameNametoCommonName.TryGetValue(sceneName, out var name) ? name : null;
+            if (collider == null) return;
+
+            collider.enabled = collected;
+            foreach (var renderer in collider.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.enabled = collected;
+            }
         }
 
         private static readonly FieldInfo DeadField =
@@ -280,19 +341,9 @@ namespace Smol_Ame_Archipelago
             DeadField.SetValue(Bubba[index], value);
         }
 
-        private void ChangeMOMButtonCollectedState(BoxCollider2D button, bool collected)
-        {
-            if (button == null) return;
-
-            button.enabled = collected;
-            foreach (var renderer in button.GetComponentsInChildren<Renderer>(true))
-            {
-                renderer.enabled = collected;
-            }
-        }
         private void CheckMomButtonPressed()
         {
-            if (Buttons == null || VictoryField == null)
+            if (MOMButtons == null || VictoryField == null)
                 return;
 
             CheckMomButton(0, "MOM Button 1");
@@ -301,20 +352,19 @@ namespace Smol_Ame_Archipelago
 
         private void CheckMomButton(int index, string buttonName)
         {
-            if (index >= Buttons.Length || Buttons[index] == null)
+            if (index >= MOMButtons.Length || MOMButtons[index] == null)
                 return;
 
             if (!LocationsCollectedInTheRegion.TryGetValue(buttonName, out bool alreadyCollected) ||
                 alreadyCollected)
                 return;
 
-            var levelButton = Buttons[index].GetComponent<LevelClearButton>();
+            var levelButton = MOMButtons[index];
             if (levelButton == null || !(bool)VictoryField.GetValue(levelButton))
                 return;
 
             LocationsCollectedInTheRegion[buttonName] = true;
             SendLocationCheck($"{RegionName}-{buttonName}");
-            MOMButtonPressed = true;
             SmolAmeData.MOMButtonsPressed++;
         }
 

@@ -31,14 +31,13 @@ namespace SmolAmeArchipelagoMod.Source
             Port = CreateClone("Port", template.gameObject, PauseMenu);
             Slot = CreateClone("Slot", template.gameObject, PauseMenu);
 
-            var Connect = GameObject.Instantiate(template.gameObject, PauseMenu);
+            GameObject Connect = GameObject.Instantiate(template.gameObject, PauseMenu);
             Connect.name = "Connect";
 
             PauseOption option = Connect.GetComponent<PauseOption>();
             option.methods = new UnityEngine.Events.UnityEvent();
             option.selectionStrings = new List<string>
             {
-                "",
                 ""
             };
 

@@ -15,7 +15,29 @@ namespace SmolAmeArchipelagoMod.Source
             {
                 { "Hub", "LevelSelect" },
                 { "Ame's Office", "Level1" },
-                { "Pekoland", "Pekoland" }
+                { "Pekoland", "Pekoland" },
+                { "What A Joke", "Bettel" },
+                { "Ame's Office REVENGEANCE", "OfficeReverse" },
+                { "Inascapable Madness", "InascapableMadness" },
+                { "To The Moon", "Moon" },
+                { "Inumore", "Inumore" },
+                { "Mogu Mogu", "MoguMogu" },
+                { "Pop On Rocks", "PopOnRocks" },
+                { "Here Comes Hope", "HereComesHope" },
+                { "Reflect", "Reflect" },
+                { "Red Heart", "BigRedHeart" },
+                { "NOTHING", "NothingBeatsAGroundPound" },
+                { "Character Select", "CharacterSelect" },
+                { "Sweet Dreams", "SweetDreams" },
+                { "Play Dice", "PlayDice" },
+                { "Graveyard Groove", "Graveyard Groove" },
+                { "BauDol", "BauDol" },
+                { "Daydream", "DayDream" },
+                { "Say! Fanfare!", "Say! Fanfare!" },
+                { "ALiCE&u", "ALiCE&u" },
+                { "Mage of Violet", "Mage of Violet" },
+                { "HOLOGRAM CIRCUS", "HOLOGRAMCircus" },
+                { "Farewell", "Farewell" }
             };
 
         internal static Dictionary<string, string> GameNametoCommonName =
@@ -23,27 +45,6 @@ namespace SmolAmeArchipelagoMod.Source
                 pair => pair.Value,
                 pair => pair.Key
             );
-
-        internal static Dictionary<string, int> GameNametoInt =
-            new Dictionary<string, int>()
-            {
-                { "LevelSelect",                0 },
-                { "Level1",                     1 },
-                { "PopOnRocks",                 2 },
-                { "BigRedHeart",                3 },
-                { "Pekoland",                   4 },
-                { "OfficeReverse",              5 },
-                { "Moon",                       6 },
-                { "NothingBeatsAGroundPound",   7 },
-                { "MoguMogu",                   8 },
-                { "Inumore",                    9 },
-                { "InascapableMadness",         10 },
-                { "HereComesHope",              11 },
-                { "Reflect",                    12 },
-                { "CharacterSelect",            13 },
-                { "Bettel",                     14 },
-                { "Pettan",                     15 },
-            };
 
         internal static Dictionary<string, Dictionary<string, bool>> AreaItemCollected;
         internal static Dictionary<string, Dictionary<string, bool>> AreaLocationCollected;
