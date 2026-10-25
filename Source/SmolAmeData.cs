@@ -1,12 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using Archipelago.MultiClient.Net;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace SmolAmeArchipelagoMod.Source
 {
     internal static class SmolAmeData
     {
+        public static string Server;
+        public static int Port;
+        public static string Slot;
+        public static string Password;
+
+        public static ArchipelagoSession Session;
+        public static LoginSuccessful Result;
+
         internal static int MOMButtonsPressed = 0;
-        internal static int TotalMOMButtons => CommonNametoGameName.Count - 1;
+        internal static int TotalMOMButtons;
+
 
         internal static Dictionary<string, Dictionary<string, string>> AreaItems;
 

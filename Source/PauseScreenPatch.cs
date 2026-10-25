@@ -19,6 +19,7 @@ namespace SmolAmeArchipelagoMod.Source
         public static TMP_InputField Server;
         public static TMP_InputField Port;
         public static TMP_InputField Slot;
+        public static TMP_InputField Password;
 
         [HarmonyPrefix]
         [HarmonyPatch("Start")]
@@ -30,6 +31,7 @@ namespace SmolAmeArchipelagoMod.Source
             Server = CreateClone("Server", template.gameObject, PauseMenu);
             Port = CreateClone("Port", template.gameObject, PauseMenu);
             Slot = CreateClone("Slot", template.gameObject, PauseMenu);
+            Password = CreateClone("Password", template.gameObject, PauseMenu);
 
             GameObject Connect = GameObject.Instantiate(template.gameObject, PauseMenu);
             Connect.name = "Connect";
@@ -44,7 +46,7 @@ namespace SmolAmeArchipelagoMod.Source
             option.methods.AddListener(() =>
             {
                 ArchipelagoPlugin.Log.LogInfo($"[Archipelago Client] Server:{Server.text} Port:{Port.text} and Slot:{Slot.text} are invoked");
-                ArchipelagoClientScript.OnConnectionInvoked();
+                SmolAmeClient.OnConnectionInvoked();
             });
 
 
@@ -225,6 +227,31 @@ namespace SmolAmeArchipelagoMod.Source
             tmp.enableWordWrapping = false;
 
             return tmp;
+        }
+    }
+
+    [HarmonyPatch(typeof(PauseOption))]
+    internal class PauseOptionPatch
+    {
+        [HarmonyPrefix]
+        [HarmonyPatch("Update")]
+        public static bool UpdatePrefix(PauseOption __instance)
+        {
+            if (__instance.selectionText != null &&
+                __instance.selectionStrings != null &&
+                __instance.selectionStrings.Count > 0)
+            {
+                __instance.currentSelection = Mathf.Clamp(
+                    __instance.currentSelection,
+                    0,
+                    __instance.selectionStrings.Count - 1
+                );
+
+                __instance.selectionText.text =
+                    __instance.selectionStrings[__instance.currentSelection];
+            }
+
+            return false;
         }
     }
 }

@@ -15,8 +15,6 @@ namespace Smol_Ame_Archipelago
 {
     internal class RandomizerPatches : MonoBehaviour
     {
-        // Item Name: "{region_name}-{item_name}"
-        // Location Name: "{region_name}-{location_name}"
         static string RegionName;
         Dictionary<string, bool> ItemsCollectedInTheRegion;
         Dictionary<string, bool> LocationsCollectedInTheRegion;
@@ -43,7 +41,6 @@ namespace Smol_Ame_Archipelago
 
             StartCoroutine(InitializeRegion(Scene.name));
         }
-
 
         private IEnumerator InitializeRegion(string sceneName)
         {
@@ -131,7 +128,7 @@ namespace Smol_Ame_Archipelago
                 $"Loaded {LocationsCollectedInTheRegion.Count} locations " +
                 $"for region: {RegionName}");
 
-            ArchipelagoClientScript.CollectCompletedLocations();
+            SmolAmeClient.CollectCompletedLocations();
 
             // Apply locations that have already been collected.
             foreach (var location in LocationsCollectedInTheRegion)
@@ -171,15 +168,12 @@ namespace Smol_Ame_Archipelago
                 $"Finished initializing region: {RegionName}");
         }
 
-
-
-
         void Update()
         {
             if (string.IsNullOrEmpty(RegionName) ||
                 LocationsCollectedInTheRegion == null ||
                 LevelManager.levelManager == null ||
-                SmolAmeClient.Session == null)
+                SmolAmeData.Session == null)
                 return;
 
 
@@ -238,7 +232,7 @@ namespace Smol_Ame_Archipelago
             if (LevelManager.levelManager == null)
                 return;
 
-            if (SmolAmeClient.Session == null)
+            if (SmolAmeData.Session == null)
                 return;
 
             if (MOMButtons != null && MOMButtons.Length > 0 &&
@@ -289,7 +283,7 @@ namespace Smol_Ame_Archipelago
 
         void SendLocationCheck(string locationName)
         {
-            if (SmolAmeClient.Session == null)
+            if (SmolAmeData.Session == null)
             {
                 ArchipelagoPlugin.Log.LogWarning("Cannot send location check: session is null.");
                 return;
@@ -304,7 +298,7 @@ namespace Smol_Ame_Archipelago
 
             ArchipelagoPlugin.Log.LogInfo($"Sending location check: {locationName} (ID: {id})");
 
-            SmolAmeClient.Session.Locations.CompleteLocationChecks(id);
+            SmolAmeData.Session.Locations.CompleteLocationChecks(id);
         }
 
         private void ChangeColliderState(Collider2D collider, bool collected)
