@@ -20,16 +20,13 @@ namespace SmolAmeArchipelago
         public const string NAME = "Smol Ame Archipelago Plugin";
         public const string VERSION = "0.2.0";
 
-        internal static ManualLogSource Log;
-
         internal static RegionSyncController RegionSync;
 
         private Harmony Harmony;
 
         private void Awake()
         {
-            Log = base.Logger;
-            Log.LogInfo($"[Archipelago Client]{NAME} v{VERSION} loaded!");
+            InfoHUD.Set($"[Archipelago Client]{NAME} v{VERSION} loaded!");
             
             string AreaItemsJSON = GetAreaItemsJSON();
             SmolAmeData.AreaItems = JsonConvert.DeserializeObject<
@@ -72,7 +69,7 @@ namespace SmolAmeArchipelago
                 SmolAmeData.LocationNameToID
                     .ToDictionary(location => location.Value, location => location.Key);
 
-            Log.LogInfo($"[Archipelago Client]JSON Loaded");
+            InfoHUD.Set($"[Archipelago Client]JSON Loaded");
 
             GameObject ArchipelagoClient = new GameObject("ArchipelagoClient");
 

@@ -47,7 +47,7 @@ namespace Smol_Ame_Archipelago
 
             if (string.IsNullOrEmpty(RegionName))
             {
-                ArchipelagoPlugin.Log.LogWarning(
+                InfoHUD.Set(
                     $"No region mapping found for scene: {sceneName}");
                 yield break;
             }
@@ -60,7 +60,7 @@ namespace Smol_Ame_Archipelago
                 }
             }
 
-            ArchipelagoPlugin.Log.LogInfo(
+            InfoHUD.Set(
                 $"Initializing region: {RegionName}");
 
             // Find Bubba tokens in the scene.
@@ -79,13 +79,13 @@ namespace Smol_Ame_Archipelago
 
                 if (collider == null)
                 {
-                    ArchipelagoPlugin.Log.LogWarning(
+                    InfoHUD.Set(
                         $"No BoxCollider2D found on MOM button: {button.name}");
                     continue;
                 }
 
 
-                ArchipelagoPlugin.Log.LogInfo(
+                InfoHUD.Set(
                     $"Found Collider for Gameobject: {button.gameObject.name}");
 
                 ChangeColliderState(collider, false);
@@ -101,14 +101,13 @@ namespace Smol_Ame_Archipelago
 
                 if (collider == null)
                 {
-                    ArchipelagoPlugin.Log.LogWarning(
+                    InfoHUD.Set(
                         $"No CircleCollider2D found on Bubba token: {token.name}");
                     continue;
                 }
 
 
-                ArchipelagoPlugin.Log.LogInfo(
-                    $"Found Collider for Gameobject: {token.gameObject.name}");
+                InfoHUD.Set($"Found Collider for Gameobject: {token.gameObject.name}");
 
                 ChangeColliderState(collider, false);
             }
@@ -122,12 +121,12 @@ namespace Smol_Ame_Archipelago
                 !SmolAmeData.AreaLocationCollected.TryGetValue(
                     RegionName, out LocationsCollectedInTheRegion))
             {
-                ArchipelagoPlugin.Log.LogError(
+                InfoHUD.Set(
                     $"No location data found for region: {RegionName}");
                 yield break;
             }
 
-            ArchipelagoPlugin.Log.LogInfo(
+            InfoHUD.Set(
                 $"Loaded {LocationsCollectedInTheRegion.Count} locations " +
                 $"for region: {RegionName}");
 
@@ -167,7 +166,7 @@ namespace Smol_Ame_Archipelago
                 }
             }
 
-            ArchipelagoPlugin.Log.LogInfo(
+            InfoHUD.Set(
                 $"Finished initializing region: {RegionName}");
         }
 
@@ -291,18 +290,18 @@ namespace Smol_Ame_Archipelago
         {
             if (SmolAmeData.Session == null)
             {
-                ArchipelagoPlugin.Log.LogWarning("Cannot send location check: session is null.");
+                InfoHUD.Set("Cannot send location check: session is null.");
                 return;
             }
 
             if (!SmolAmeData.LocationNameToID.TryGetValue(locationName, out int id))
             {
-                ArchipelagoPlugin.Log.LogError(
+                InfoHUD.Set(
                     $"Location ID not found for '{locationName}'.");
                 return;
             }
 
-            ArchipelagoPlugin.Log.LogInfo($"Sending location check: {locationName} (ID: {id})");
+            InfoHUD.Set($"Sending location check: {locationName} (ID: {id})");
 
             SmolAmeData.Session.Locations.CompleteLocationChecks(id);
         }
@@ -328,13 +327,13 @@ namespace Smol_Ame_Archipelago
         {
             if (Bubba == null || index >= Bubba.Length)
             {
-                ArchipelagoPlugin.Log.LogError($"Bubba token at index {index} was not found.");
+                InfoHUD.Set($"Bubba token at index {index} was not found.");
                 return;
             }
 
             if (Bubba[index] == null || DeadField == null)
             {
-                ArchipelagoPlugin.Log.LogError("Could not access TokenScript.dead.");
+                InfoHUD.Set("Could not access TokenScript.dead.");
                 return;
             }
 

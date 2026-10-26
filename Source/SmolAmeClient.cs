@@ -19,28 +19,28 @@ namespace SmolAmeArchipelago
         {
             if (string.IsNullOrWhiteSpace(server))
             {
-                ArchipelagoPlugin.Log.LogError(
+                InfoHUD.Set(
                     "Archipelago server address is empty.");
                 return false;
             }
 
             if (port < 1 || port > 65535)
             {
-                ArchipelagoPlugin.Log.LogError(
+                InfoHUD.Set(
                     $"Invalid port: {port}");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(user))
             {
-                ArchipelagoPlugin.Log.LogError(
+                InfoHUD.Set(
                     "Archipelago slot name is empty.");
                 return false;
             }
 
             try
             {
-                ArchipelagoPlugin.Log.LogInfo(
+                InfoHUD.Set(
                     $"Connecting to {server}:{port}, slot '{user}'");
 
                 SmolAmeData.Session = ArchipelagoSessionFactory
@@ -58,29 +58,29 @@ namespace SmolAmeArchipelago
                     password: password
                 );
 
-                ArchipelagoPlugin.Log.LogInfo(
+                InfoHUD.Set(
                     $"[Archipelago] Login result: {result.GetType().Name}");
 
                 if (!result.Successful)
                 {
                     LoginFailure failure = (LoginFailure)result;
 
-                    ArchipelagoPlugin.Log.LogError(
+                    InfoHUD.Set(
                         $"Failed to connect to {server}:{port} " +
                         $"as '{user}'.");
 
                     foreach (string error in failure.Errors)
-                        ArchipelagoPlugin.Log.LogError(error);
+                        InfoHUD.Set(error);
 
                     foreach (ConnectionRefusedError error
                              in failure.ErrorCodes)
-                        ArchipelagoPlugin.Log.LogError(error.ToString());
+                        InfoHUD.Set(error.ToString());
 
                     SmolAmeData.Session = null;
                     return false;
                 }
 
-                ArchipelagoPlugin.Log.LogInfo(
+                InfoHUD.Set(
                     $"Successfully connected to {server}:{port} " +
                     $"as '{user}'.");
                 SmolAmeData.Result = (LoginSuccessful)result;
@@ -90,7 +90,7 @@ namespace SmolAmeArchipelago
             }
             catch (Exception e)
             {
-                ArchipelagoPlugin.Log.LogError(
+                InfoHUD.Set(
                     $"Archipelago connection exception:\n{e}");
 
                 SmolAmeData.Session = null;
@@ -103,36 +103,36 @@ namespace SmolAmeArchipelago
 
         private static void OnSocketOpened()
         {
-            ArchipelagoPlugin.Log.LogInfo(
+            InfoHUD.Set(
                         "[Archipelago] WebSocket OPENED");
         }
 
         private static void OnSocketClosed(string reason)
         {
-            ArchipelagoPlugin.Log.LogWarning(
+            InfoHUD.Set(
                         $"[Archipelago] WebSocket CLOSED because {reason}");
         }
 
         private static void OnErrorReceived(Exception exception, string message)
-        {
-            ArchipelagoPlugin.Log.LogWarning(
+        {   
+            InfoHUD.Set(
                         $"[Archipelago] Socket error: {exception} Message:{message}");
         }
 
         private static void OnPacketReceived(ArchipelagoPacketBase packet)
         {
-            ArchipelagoPlugin.Log.LogWarning(
+            InfoHUD.Set(
                          $"[Archipelago] Packet received: {packet.GetType().Name}");
         }
 
         public static void OnConnectionInvoked()
         {
-            ArchipelagoPlugin.Log.LogInfo("[Archipelago Client] Connection Invoked");
+            InfoHUD.Set("[Archipelago Client] Connection Invoked");
             SmolAmeData.Server = PauseScreenPatch.Server.text;
 
             if (!int.TryParse(PauseScreenPatch.Port.text, out SmolAmeData.Port))
             {
-                ArchipelagoPlugin.Log.LogError("[Archipelago Client] Cannot connect to server, Port should be only numbers");
+                InfoHUD.Set("[Archipelago Client] Cannot connect to server, Port should be only numbers");
             }
 
             SmolAmeData.Slot = PauseScreenPatch.Slot.text;
@@ -148,14 +148,14 @@ namespace SmolAmeArchipelago
                 {
                     SmolAmeData.Session.Items.ItemReceived += ReceivedItem;
                 }
-                ArchipelagoPlugin.Log.LogInfo($"[Archipelago Client] Connection result: {tryConnect}");
+                InfoHUD.Set($"[Archipelago Client] Connection result: {tryConnect}");
 
                 CollectReceivedItems();
                 CollectCompletedLocations();
             }
             catch (Exception ex)
             {
-                ArchipelagoPlugin.Log.LogError($"[Archipelago Client] Could not connect: {ex.Message}");
+                InfoHUD.Set($"[Archipelago Client] Could not connect: {ex.Message}");
             }
         }
 
@@ -197,11 +197,11 @@ namespace SmolAmeArchipelago
                 string itemName = parts[1];
 
                 SmolAmeData.AreaItemCollected[regionName][itemName] = true;
-                ArchipelagoPlugin.Log.LogInfo($"Received {item} in {regionName}");
+                InfoHUD.Set($"Received {item} in {regionName}");
             }
             else
             {
-                ArchipelagoPlugin.Log.LogInfo("[Archipelago Client] Item received but cannot parse its region and item name");
+                InfoHUD.Set("[Archipelago Client] Item received but cannot parse its region and item name");
             }
         }
 
@@ -215,11 +215,11 @@ namespace SmolAmeArchipelago
                 string location = parts[1];
 
                 SmolAmeData.AreaLocationCollected[regionName][location] = true;
-                ArchipelagoPlugin.Log.LogInfo($"Received {location} in {regionName}");
+                InfoHUD.Set($"Received {location} in {regionName}");
             }
             else
             {
-                ArchipelagoPlugin.Log.LogInfo("[Archipelago Client] Item received but cannot parse its region and item name");
+                InfoHUD.Set("[Archipelago Client] Item received but cannot parse its region and item name");
             }
         }
 

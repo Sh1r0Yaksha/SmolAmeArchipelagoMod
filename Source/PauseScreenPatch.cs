@@ -40,7 +40,7 @@ namespace SmolAmeArchipelagoMod.Source
 
             option.methods.AddListener(() =>
             {
-                ArchipelagoPlugin.Log.LogInfo($"[Archipelago Client] Server:{Server.text} Port:{Port.text} and Slot:{Slot.text} are invoked");
+                InfoHUD.Set($"[Archipelago Client] Server:{Server.text} Port:{Port.text} and Slot:{Slot.text} are invoked");
                 SmolAmeClient.OnConnectionInvoked();
             });
 
