@@ -40,8 +40,7 @@ namespace SmolAmeArchipelago
 
             try
             {
-                InfoHUD.Set(
-                    $"Connecting to {server}:{port}, slot '{user}'");
+                
 
                 SmolAmeData.Session = ArchipelagoSessionFactory
                     .CreateSession(server, port);
@@ -57,9 +56,6 @@ namespace SmolAmeArchipelago
                     ItemsHandlingFlags.AllItems,
                     password: password
                 );
-
-                InfoHUD.Set(
-                    $"[Archipelago] Login result: {result.GetType().Name}");
 
                 if (!result.Successful)
                 {
@@ -90,8 +86,6 @@ namespace SmolAmeArchipelago
             }
             catch (Exception e)
             {
-                InfoHUD.Set(
-                    $"Archipelago connection exception:\n{e}");
 
                 SmolAmeData.Session = null;
                 SmolAmeData.Result = null;
@@ -103,31 +97,27 @@ namespace SmolAmeArchipelago
 
         private static void OnSocketOpened()
         {
-            InfoHUD.Set(
-                        "[Archipelago] WebSocket OPENED");
         }
 
         private static void OnSocketClosed(string reason)
         {
-            InfoHUD.Set(
-                        $"[Archipelago] WebSocket CLOSED because {reason}");
+            InfoHUD.Set($"Session Disconnected. Moving to Hub and attempting to reconnect...");
+            LevelLoader.loader.LoadLevel(0);
+            
+            TryConnect(SmolAmeData.Server, SmolAmeData.Port, SmolAmeData.Slot, SmolAmeData.Password);
+
         }
 
         private static void OnErrorReceived(Exception exception, string message)
         {   
-            InfoHUD.Set(
-                        $"[Archipelago] Socket error: {exception} Message:{message}");
         }
 
         private static void OnPacketReceived(ArchipelagoPacketBase packet)
         {
-            InfoHUD.Set(
-                         $"[Archipelago] Packet received: {packet.GetType().Name}");
         }
 
         public static void OnConnectionInvoked()
         {
-            InfoHUD.Set("[Archipelago Client] Connection Invoked");
             SmolAmeData.Server = PauseScreenPatch.Server.text;
 
             if (!int.TryParse(PauseScreenPatch.Port.text, out SmolAmeData.Port))
@@ -148,7 +138,7 @@ namespace SmolAmeArchipelago
                 {
                     SmolAmeData.Session.Items.ItemReceived += ReceivedItem;
                 }
-                InfoHUD.Set($"[Archipelago Client] Connection result: {tryConnect}");
+                
 
                 CollectReceivedItems();
                 CollectCompletedLocations();
@@ -197,11 +187,7 @@ namespace SmolAmeArchipelago
                 string itemName = parts[1];
 
                 SmolAmeData.AreaItemCollected[regionName][itemName] = true;
-                InfoHUD.Set($"Received {item} in {regionName}");
-            }
-            else
-            {
-                InfoHUD.Set("[Archipelago Client] Item received but cannot parse its region and item name");
+                InfoHUD.Set($"Received {itemName} in {regionName}");
             }
         }
 
@@ -215,11 +201,6 @@ namespace SmolAmeArchipelago
                 string location = parts[1];
 
                 SmolAmeData.AreaLocationCollected[regionName][location] = true;
-                InfoHUD.Set($"Received {location} in {regionName}");
-            }
-            else
-            {
-                InfoHUD.Set("[Archipelago Client] Item received but cannot parse its region and item name");
             }
         }
 

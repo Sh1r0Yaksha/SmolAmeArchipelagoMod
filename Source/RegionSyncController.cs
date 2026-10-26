@@ -47,8 +47,6 @@ namespace Smol_Ame_Archipelago
 
             if (string.IsNullOrEmpty(RegionName))
             {
-                InfoHUD.Set(
-                    $"No region mapping found for scene: {sceneName}");
                 yield break;
             }
 
@@ -59,9 +57,15 @@ namespace Smol_Ame_Archipelago
                     empty.gameObject.SetActive(true);
                 }
             }
-
-            InfoHUD.Set(
-                $"Initializing region: {RegionName}");
+            else
+            {
+                if (SmolAmeData.Session == null || !SmolAmeData.Session.Socket.Connected)
+                {
+                    InfoHUD.Set("Session is not connected... Changing back to Hub");
+                    LevelLoader.loader.LoadLevel(0);
+                }
+                
+            }
 
             // Find Bubba tokens in the scene.
             Bubba = FindObjectsOfType<TokenScript>();
@@ -79,14 +83,8 @@ namespace Smol_Ame_Archipelago
 
                 if (collider == null)
                 {
-                    InfoHUD.Set(
-                        $"No BoxCollider2D found on MOM button: {button.name}");
                     continue;
                 }
-
-
-                InfoHUD.Set(
-                    $"Found Collider for Gameobject: {button.gameObject.name}");
 
                 ChangeColliderState(collider, false);
             }
@@ -101,18 +99,11 @@ namespace Smol_Ame_Archipelago
 
                 if (collider == null)
                 {
-                    InfoHUD.Set(
-                        $"No CircleCollider2D found on Bubba token: {token.name}");
                     continue;
                 }
 
-
-                InfoHUD.Set($"Found Collider for Gameobject: {token.gameObject.name}");
-
                 ChangeColliderState(collider, false);
             }
-
-
 
             OnItemReceived();
 
@@ -121,14 +112,8 @@ namespace Smol_Ame_Archipelago
                 !SmolAmeData.AreaLocationCollected.TryGetValue(
                     RegionName, out LocationsCollectedInTheRegion))
             {
-                InfoHUD.Set(
-                    $"No location data found for region: {RegionName}");
                 yield break;
             }
-
-            InfoHUD.Set(
-                $"Loaded {LocationsCollectedInTheRegion.Count} locations " +
-                $"for region: {RegionName}");
 
             SmolAmeClient.CollectCompletedLocations();
 
@@ -165,9 +150,6 @@ namespace Smol_Ame_Archipelago
                         break;
                 }
             }
-
-            InfoHUD.Set(
-                $"Finished initializing region: {RegionName}");
         }
 
         void Update()
@@ -211,6 +193,7 @@ namespace Smol_Ame_Archipelago
                 {
                     LocationsCollectedInTheRegion[stacheQuota] = true;
                     SmolAmeData.StacheQuotaCollected++;
+                    
                     SendLocationCheck(locationName);
                 }
 
@@ -290,19 +273,14 @@ namespace Smol_Ame_Archipelago
         {
             if (SmolAmeData.Session == null)
             {
-                InfoHUD.Set("Cannot send location check: session is null.");
                 return;
             }
 
             if (!SmolAmeData.LocationNameToID.TryGetValue(locationName, out int id))
             {
-                InfoHUD.Set(
-                    $"Location ID not found for '{locationName}'.");
                 return;
             }
-
-            InfoHUD.Set($"Sending location check: {locationName} (ID: {id})");
-
+            InfoHUD.Set($"Collected {locationName}");
             SmolAmeData.Session.Locations.CompleteLocationChecks(id);
         }
 
@@ -327,13 +305,11 @@ namespace Smol_Ame_Archipelago
         {
             if (Bubba == null || index >= Bubba.Length)
             {
-                InfoHUD.Set($"Bubba token at index {index} was not found.");
                 return;
             }
 
             if (Bubba[index] == null || DeadField == null)
             {
-                InfoHUD.Set("Could not access TokenScript.dead.");
                 return;
             }
 

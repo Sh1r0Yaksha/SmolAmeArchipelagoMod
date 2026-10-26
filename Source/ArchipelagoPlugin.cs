@@ -26,7 +26,6 @@ namespace SmolAmeArchipelago
 
         private void Awake()
         {
-            InfoHUD.Set($"[Archipelago Client]{NAME} v{VERSION} loaded!");
             
             string AreaItemsJSON = GetAreaItemsJSON();
             SmolAmeData.AreaItems = JsonConvert.DeserializeObject<
@@ -69,12 +68,11 @@ namespace SmolAmeArchipelago
                 SmolAmeData.LocationNameToID
                     .ToDictionary(location => location.Value, location => location.Key);
 
-            InfoHUD.Set($"[Archipelago Client]JSON Loaded");
-
             GameObject ArchipelagoClient = new GameObject("ArchipelagoClient");
 
             RegionSync = ArchipelagoClient.AddComponent<RegionSyncController>();
             ArchipelagoClient.AddComponent<CompletionRuleChecker>();
+            ArchipelagoClient.AddComponent<Console>();
 
             DontDestroyOnLoad( ArchipelagoClient );
 

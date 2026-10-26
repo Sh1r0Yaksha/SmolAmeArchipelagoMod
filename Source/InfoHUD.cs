@@ -35,7 +35,7 @@ namespace SmolAmeArchipelagoMod.Source
     internal class InfoHUD
     {
         // Size of the console box. The height decides how many lines are visible.
-        static readonly Vector2 BoxSize = new Vector2(500, 400);
+        static readonly Vector2 BoxSize = new Vector2(500, 100);
         // Distance in from the top right corner of the screen.
         static readonly Vector2 Padding = new Vector2(10, 10);
 
@@ -74,7 +74,7 @@ namespace SmolAmeArchipelagoMod.Source
             // TopRight keeps the look of the version text. Use TopLeft for a more typical console.
             Text.alignment = TextAlignmentOptions.TopRight;
             Text.raycastTarget = false;                    // don't block touch/mouse input to the buttons
-            Text.text = "InfoHUD";
+            Text.text = "";
         }
 
         public static void AddLine(string s)
@@ -87,7 +87,6 @@ namespace SmolAmeArchipelagoMod.Source
             AddLine(s);
         }
 
-        // Main thread only, called every frame from the plugin's Update().
         // Main thread only, called every frame from the plugin's Update().
         public static void Flush()
         {

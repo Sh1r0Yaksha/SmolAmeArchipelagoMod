@@ -16,6 +16,7 @@ namespace SmolAmeArchipelagoMod.Source
         public static string Server;
         public static int Port;
         public static string Slot;
+        public static string Password;
 
         public static ArchipelagoSession Session;
         public static LoginSuccessful Result;
@@ -32,6 +33,8 @@ namespace SmolAmeArchipelagoMod.Source
         internal static int BaseGameStachQuotaCount = 13;
         internal static int CAStachQuotaCount = 10;
         internal static int StacheQuotaCollected = 0;
+
+        internal static bool Disconnected;
 
         internal static readonly HashSet<string> NonLevelRegions =
             new HashSet<string> { "Hub", "Character Select" };
