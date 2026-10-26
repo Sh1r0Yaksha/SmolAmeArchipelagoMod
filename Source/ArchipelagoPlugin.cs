@@ -22,7 +22,7 @@ namespace SmolAmeArchipelago
 
         internal static ManualLogSource Log;
 
-        internal static RandomizerPatches RandomizerPatches;
+        internal static RegionSyncController RegionSync;
 
         private Harmony Harmony;
 
@@ -75,8 +75,9 @@ namespace SmolAmeArchipelago
             Log.LogInfo($"[Archipelago Client]JSON Loaded");
 
             GameObject ArchipelagoClient = new GameObject("ArchipelagoClient");
-            ArchipelagoClient.AddComponent<ArchipelagoClientScript>();
-            RandomizerPatches = ArchipelagoClient.AddComponent<RandomizerPatches>();
+
+            RegionSync = ArchipelagoClient.AddComponent<RegionSyncController>();
+            ArchipelagoClient.AddComponent<CompletionRuleChecker>();
 
             DontDestroyOnLoad( ArchipelagoClient );
 

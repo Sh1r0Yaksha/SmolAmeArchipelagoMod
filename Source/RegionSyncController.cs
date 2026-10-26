@@ -1,26 +1,22 @@
 ﻿using HarmonyLib;
 using SmolAmeArchipelago;
 using SmolAmeArchipelagoMod.Source;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Runtime.Remoting.Messaging;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 
 namespace Smol_Ame_Archipelago
 {
-    internal class RandomizerPatches : MonoBehaviour
+    internal class RegionSyncController : MonoBehaviour
     {
         static string RegionName;
         Dictionary<string, bool> ItemsCollectedInTheRegion;
         Dictionary<string, bool> LocationsCollectedInTheRegion;
         TokenScript[] Bubba;
         LevelClearButton[] MOMButtons;
-        //BoxCollider2D[] Colliders;
 
         void Awake() 
         {
@@ -56,6 +52,14 @@ namespace Smol_Ame_Archipelago
                 yield break;
             }
 
+            if (string.Equals(RegionName, "Hub"))
+            {
+                foreach (var empty in LevelEmptyManager.manager.empties)
+                {
+                    empty.gameObject.SetActive(true);
+                }
+            }
+
             ArchipelagoPlugin.Log.LogInfo(
                 $"Initializing region: {RegionName}");
 
@@ -80,7 +84,6 @@ namespace Smol_Ame_Archipelago
                     continue;
                 }
 
-                //Colliders[colliderIndex++] = collider;
 
                 ArchipelagoPlugin.Log.LogInfo(
                     $"Found Collider for Gameobject: {button.gameObject.name}");
@@ -191,27 +194,30 @@ namespace Smol_Ame_Archipelago
                             !alreadyCollected)
                         {
                             LocationsCollectedInTheRegion[coinName] = true;
+                            SmolAmeData.BubbaCollected++;
                             SendLocationCheck(locationName);
                         }
                     }
                 }
-            } 
-            {
-                if (LevelManager.levelManager.collectedMoustaches >= LevelManager.levelManager.moustacheQuotaInt)
-                {
-                    string stacheQuota = "Stache Quota";
-                    string locationName = $"{RegionName}-{stacheQuota}";
-                    if (LocationsCollectedInTheRegion.TryGetValue(
-                        stacheQuota, out bool alreadyCollected) &&
-                    !alreadyCollected)
-                    {
-                        LocationsCollectedInTheRegion[stacheQuota] = true;
-                        SendLocationCheck(locationName);
-                    }
-
-                }
             }
+
             // Sending Stache Quota Checks
+            if (LevelManager.levelManager.collectedMoustaches >= LevelManager.levelManager.moustacheQuotaInt)
+            {
+                string stacheQuota = "Stache Quota";
+                string locationName = $"{RegionName}-{stacheQuota}";
+                if (LocationsCollectedInTheRegion.TryGetValue(
+                    stacheQuota, out bool alreadyCollected) &&
+                !alreadyCollected)
+                {
+                    LocationsCollectedInTheRegion[stacheQuota] = true;
+                    SmolAmeData.StacheQuotaCollected++;
+                    SendLocationCheck(locationName);
+                }
+
+            }
+
+            
             CheckMomButtonPressed();
         }
 
@@ -278,7 +284,7 @@ namespace Smol_Ame_Archipelago
 
         string GetRegionName(string sceneName)
         {
-            return SmolAmeData.GameNametoCommonName.TryGetValue(sceneName, out var name) ? name : null;
+            return SmolAmeData.SceneNametoCommonName.TryGetValue(sceneName, out var name) ? name : null;
         }
 
         void SendLocationCheck(string locationName)
@@ -359,7 +365,7 @@ namespace Smol_Ame_Archipelago
 
             LocationsCollectedInTheRegion[buttonName] = true;
             SendLocationCheck($"{RegionName}-{buttonName}");
-            SmolAmeData.MOMButtonsPressed++;
+            SmolAmeData.MOMButtonsPressed.Add(RegionName);
         }
 
         void SetStacheQuota(bool value)

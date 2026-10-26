@@ -5,9 +5,7 @@ using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.Models;
 using SmolAmeArchipelagoMod.Source;
 using System;
-using System.Net.Sockets;
-using UnityEngine;
-using static System.Collections.Specialized.BitVector32;
+using System.Collections.Generic;
 
 namespace SmolAmeArchipelago
 {
@@ -86,6 +84,7 @@ namespace SmolAmeArchipelago
                     $"Successfully connected to {server}:{port} " +
                     $"as '{user}'.");
                 SmolAmeData.Result = (LoginSuccessful)result;
+                LoadSlotData(SmolAmeData.Result.SlotData);
 
                 return true;
             }
@@ -164,7 +163,7 @@ namespace SmolAmeArchipelago
         {
             ItemInfo recieved = helper.DequeueItem();
             PutReceivedItemInSmolAme(recieved);
-            ArchipelagoPlugin.RandomizerPatches.OnItemReceived();
+            ArchipelagoPlugin.RegionSync.OnItemReceived();
         }
 
         static void CollectReceivedItems()
@@ -222,6 +221,20 @@ namespace SmolAmeArchipelago
             {
                 ArchipelagoPlugin.Log.LogInfo("[Archipelago Client] Item received but cannot parse its region and item name");
             }
+        }
+
+        public static void LoadSlotData(Dictionary<string, object> slotData)
+        {
+            SmolAmeData.Mode = (GameMode)GetIntFromSlotData(slotData, "game_mode", (int)GameMode.AllStages);
+            SmolAmeData.IncludeCA = GetIntFromSlotData(slotData, "include_ca", 0) != 0;
+        }
+
+        private static int GetIntFromSlotData(Dictionary<string, object> data, string key, int fallback)
+        {
+            if (data != null && data.TryGetValue(key, out object value) && value != null)
+                return Convert.ToInt32(value);
+
+            return fallback;
         }
     }
 }

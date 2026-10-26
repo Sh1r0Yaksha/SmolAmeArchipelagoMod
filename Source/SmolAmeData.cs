@@ -4,23 +4,42 @@ using System.Linq;
 
 namespace SmolAmeArchipelagoMod.Source
 {
+    public enum GameMode
+    {
+        AllStages = 0,
+        Bubba = 1,
+        CC = 2
+    }
+
     internal static class SmolAmeData
     {
         public static string Server;
         public static int Port;
         public static string Slot;
-        public static string Password;
 
         public static ArchipelagoSession Session;
         public static LoginSuccessful Result;
 
-        internal static int MOMButtonsPressed = 0;
-        internal static int TotalMOMButtons;
+        public static GameMode Mode = GameMode.AllStages;
+        public static bool IncludeCA;
+
+        internal static HashSet<string> MOMButtonsPressed = new HashSet<string>();
+        
+        internal static int BaseGameBubbaCount = 39;
+        internal static int CABubbaCount = 30;
+        internal static int BubbaCollected = 0;
+
+        internal static int BaseGameStachQuotaCount = 13;
+        internal static int CAStachQuotaCount = 10;
+        internal static int StacheQuotaCollected = 0;
+
+        internal static readonly HashSet<string> NonLevelRegions =
+            new HashSet<string> { "Hub", "Character Select" };
 
 
         internal static Dictionary<string, Dictionary<string, string>> AreaItems;
 
-        internal static Dictionary<string, string> CommonNametoGameName = 
+        internal static Dictionary<string, string> BaseGameNameToSceneName =
             new Dictionary<string, string>()
             {
                 { "Hub", "LevelSelect" },
@@ -37,7 +56,13 @@ namespace SmolAmeArchipelagoMod.Source
                 { "Reflect", "Reflect" },
                 { "Red Heart", "BigRedHeart" },
                 { "NOTHING", "NothingBeatsAGroundPound" },
-                { "Character Select", "CharacterSelect" },
+                { "Character Select", "CharacterSelect" }
+            };
+
+        internal static Dictionary<string, string> CANameToSceneName = 
+            new Dictionary<string, string>()
+            {
+                
                 { "Sweet Dreams", "SweetDreams" },
                 { "Play Dice", "PlayDice" },
                 { "Graveyard Groove", "Graveyard Groove" },
@@ -50,8 +75,13 @@ namespace SmolAmeArchipelagoMod.Source
                 { "Farewell", "Farewell" }
             };
 
-        internal static Dictionary<string, string> GameNametoCommonName =
-            CommonNametoGameName.ToDictionary(
+        internal static Dictionary<string, string> CommonNametoSceneName =
+            BaseGameNameToSceneName
+                .Concat(CANameToSceneName)
+                .ToDictionary(pair => pair.Key, pair => pair.Value);
+
+        internal static Dictionary<string, string> SceneNametoCommonName =
+            CommonNametoSceneName.ToDictionary(
                 pair => pair.Value,
                 pair => pair.Key
             );

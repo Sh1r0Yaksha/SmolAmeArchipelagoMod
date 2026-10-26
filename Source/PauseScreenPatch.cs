@@ -2,14 +2,9 @@
 using HarmonyLib;
 using SmolAmeArchipelago;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
-using System.Security.Policy;
-using System.Xml.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static UnityEngine.UI.Image;
 
 namespace SmolAmeArchipelagoMod.Source
 {
