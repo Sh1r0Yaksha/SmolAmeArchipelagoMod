@@ -53,11 +53,8 @@ namespace SmolAmeArchipelagoMod.Source
         {
             TextMeshProUGUI source = hud.versionText;
 
-            // Clone the version text so font, size, colour and material all match.
-            // Same parent = same canvas, so scaling behaves the same as the rest of the HUD.
             Text = GameObject.Instantiate(source, source.transform.parent, false);
             Text.name = "InfoText";
-            // Anchor + pivot at (1, 1) = top right corner of the parent.
             RectTransform rt = Text.rectTransform;
 
             rt.anchorMin = new Vector2(1, 1);
@@ -66,14 +63,12 @@ namespace SmolAmeArchipelagoMod.Source
             rt.anchoredPosition = new Vector2(-Padding.x, -Padding.y);
             rt.sizeDelta = BoxSize;
 
-            // Needs to wrap inside the box and never shrink, so the height check below is reliable.
             Text.enableAutoSizing = false;
             Text.enableWordWrapping = true;
             Text.overflowMode = TextOverflowModes.Overflow;
 
-            // TopRight keeps the look of the version text. Use TopLeft for a more typical console.
             Text.alignment = TextAlignmentOptions.TopRight;
-            Text.raycastTarget = false;                    // don't block touch/mouse input to the buttons
+            Text.raycastTarget = false;           
             Text.text = "";
         }
 

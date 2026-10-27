@@ -187,7 +187,17 @@ namespace SmolAmeArchipelago
                 string itemName = parts[1];
 
                 SmolAmeData.AreaItemCollected[regionName][itemName] = true;
-                InfoHUD.Set($"Received {itemName} in {regionName}");
+                
+                string displayName = itemName;
+
+                // Regions with a single MOM button don't need the "1" in the message
+                if (itemName.Contains("MOM Button") &&
+                    !SmolAmeData.AreaItems[regionName].ContainsKey("MOM Button 2"))
+                {
+                    displayName = "MOM Button";
+                }
+
+                InfoHUD.Set($"Received {displayName} in {regionName}");
             }
         }
 
