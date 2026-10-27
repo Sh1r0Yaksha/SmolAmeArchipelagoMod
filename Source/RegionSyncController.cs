@@ -33,7 +33,6 @@ namespace Smol_Ame_Archipelago
             RegionName = null;
             ItemsCollectedInTheRegion = null;
             Bubba = null;
-            //Colliders = null;
 
             StartCoroutine(InitializeRegion(Scene.name));
         }
@@ -61,16 +60,21 @@ namespace Smol_Ame_Archipelago
             {
                 if (SmolAmeData.Session == null || !SmolAmeData.Session.Socket.Connected)
                 {
-                    InfoHUD.Set("Session is not connected... Changing back to Hub");
+                    InfoHUD.Set("Session is not connected... Switching back to the Hub");
                     LevelLoader.loader.LoadLevel(0);
                 }
                 
             }
 
             // Find Bubba tokens in the scene.
-            Bubba = FindObjectsOfType<TokenScript>();
+            var bubbas = FindObjectsOfType<TokenScript>();
+            Bubba = new TokenScript[bubbas.Length];
 
-            // Find level-clear buttons and their colliders.
+            foreach (var bubba in bubbas)
+            {
+                Bubba[bubba.tokenNum] = bubba;
+            }
+
             MOMButtons = FindObjectsOfType<LevelClearButton>();
 
             // Process MOM buttons.
@@ -79,14 +83,7 @@ namespace Smol_Ame_Archipelago
                 if (button == null)
                     continue;
 
-                BoxCollider2D collider = button.GetComponent<BoxCollider2D>();
-
-                if (collider == null)
-                {
-                    continue;
-                }
-
-                ChangeColliderState(collider, false);
+                ChangeGameObjectState(button.gameObject, false);
             }
 
             // Process Bubba tokens.
@@ -95,14 +92,7 @@ namespace Smol_Ame_Archipelago
                 if (token == null)
                     continue;
 
-                CircleCollider2D collider = token.GetComponent<CircleCollider2D>();
-
-                if (collider == null)
-                {
-                    continue;
-                }
-
-                ChangeColliderState(collider, false);
+                ChangeGameObjectState(token.gameObject, false);
             }
 
             OnItemReceived();
@@ -228,9 +218,7 @@ namespace Smol_Ame_Archipelago
                 ItemsCollectedInTheRegion.TryGetValue(
                     "MOM Button 1", out bool mom1Collected))
             {
-                ChangeColliderState(
-                    MOMButtons[0].GetComponent<BoxCollider2D>(),
-                    mom1Collected);
+                ChangeGameObjectState(MOMButtons[0].gameObject, mom1Collected);
             }
 
             if (MOMButtons != null && MOMButtons.Length > 1 &&
@@ -238,9 +226,7 @@ namespace Smol_Ame_Archipelago
                 ItemsCollectedInTheRegion.TryGetValue(
                     "MOM Button 2", out bool mom2Collected))
             {
-                ChangeColliderState(
-                    MOMButtons[1].GetComponent<BoxCollider2D>(),
-                    mom2Collected);
+                ChangeGameObjectState(MOMButtons[1].gameObject, mom2Collected);
             }
 
             // Enable or disable Bubba coins.
@@ -257,9 +243,7 @@ namespace Smol_Ame_Archipelago
                 if (ItemsCollectedInTheRegion.TryGetValue(
                     itemName, out bool coinReceived))
                 {
-                    ChangeColliderState(
-                        Bubba[i].GetComponent<CircleCollider2D>(),
-                        coinReceived);
+                    ChangeGameObjectState(Bubba[i].gameObject, coinReceived);
                 }
             }
         }
@@ -284,15 +268,11 @@ namespace Smol_Ame_Archipelago
             SmolAmeData.Session.Locations.CompleteLocationChecks(id);
         }
 
-        private void ChangeColliderState(Collider2D collider, bool collected)
+        private void ChangeGameObjectState(GameObject gameObject, bool collected)
         {
-            if (collider == null) return;
+            if (gameObject == null) return;
 
-            collider.enabled = collected;
-            foreach (var renderer in collider.GetComponentsInChildren<Renderer>(true))
-            {
-                renderer.enabled = collected;
-            }
+            gameObject.SetActive(collected);
         }
 
         private static readonly FieldInfo DeadField =

@@ -1,5 +1,4 @@
 ﻿using BepInEx;
-using BepInEx.Logging;
 using HarmonyLib;
 using Newtonsoft.Json;
 using Smol_Ame_Archipelago;
