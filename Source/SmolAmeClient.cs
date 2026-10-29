@@ -77,14 +77,16 @@ namespace SmolAmeArchipelago
                     return false;
                 }
 
-                HUD.Set(
-                    $"Successfully connected to {server}:{port} " +
-                    $"as '{user}'.");
+                
                 PlayerPrefs.SetString("server", server);
                 PlayerPrefs.SetInt("port", port);
                 PlayerPrefs.SetString("slot", user);
                 SmolAmeData.Result = (LoginSuccessful)result;
                 LoadSlotData(SmolAmeData.Result.SlotData);
+
+                HUD.Set(
+                    $"Successfully connected to {server}:{port} " +
+                    $"as '{user}' with GameMode:{SmolAmeData.Mode}");
 
                 return true;
             }
@@ -142,7 +144,6 @@ namespace SmolAmeArchipelago
                 {
                     SmolAmeData.Session.Items.ItemReceived += ReceivedItem;
                 }
-                
 
                 CollectReceivedItems();
                 CollectCompletedLocations();
@@ -206,6 +207,13 @@ namespace SmolAmeArchipelago
         static void PutReceivedLocationInSmolAme(string regionName, string checkName)
         {
             SmolAmeData.AreaChecksCollected[regionName][checkName] = true;
+            if (checkName.Contains("MOM Button"))
+            {
+                if (SmolAmeData.AreaChecksCollected[regionName][checkName])
+                {
+                    SmolAmeData.MOMButtonsPressed.Add(regionName);
+                }
+            }
         }
 
         public static void LoadSlotData(Dictionary<string, object> slotData)

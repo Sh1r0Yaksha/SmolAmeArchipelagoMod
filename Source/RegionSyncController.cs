@@ -271,9 +271,13 @@ namespace Smol_Ame_Archipelago
                     ChangeGameObjectState(MOMButtons[1].gameObject, mom2Collected);
                 }
             }
-            else
+            else if (string.Equals(RegionName, "Red Heart"))
             {
-                if(ItemsCollectedInTheRegion.TryGetValue(
+
+            }
+            else 
+            {
+                if (ItemsCollectedInTheRegion.TryGetValue(
                     "MOM Button Unlock", out bool mom1Collected))
                 {
                     ChangeGameObjectState(MOMButtons[0].gameObject, mom1Collected);
@@ -354,12 +358,24 @@ namespace Smol_Ame_Archipelago
 
         private void CheckMomButtonPressed()
         {
-            if (MOMButtons == null || VictoryField == null)
-                return;
+            if (!string.Equals(RegionName, "Red Heart"))
+            {
+                if (MOMButtons == null || VictoryField == null)
+                    return;
 
-            CheckMomButton(0, "MOM Button");
-            CheckMomButton(0, "MOM Button 1");
-            CheckMomButton(1, "MOM Button 2");
+                CheckMomButton(0, "MOM Button");
+                CheckMomButton(0, "MOM Button 1");
+                CheckMomButton(1, "MOM Button 2");
+            }
+            else
+            {
+                var pot = FindObjectOfType<PotLidScript>();
+                
+                MOMButtons = new LevelClearButton[1];
+                MOMButtons[0] = pot.GetComponentInChildren<LevelClearButton>(true);
+
+                CheckMomButton(0, "MOM Button");
+            }
         }
 
         private void CheckMomButton(int index, string buttonName)
