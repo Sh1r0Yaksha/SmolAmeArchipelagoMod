@@ -3,7 +3,9 @@ using SmolAmeArchipelago;
 using SmolAmeArchipelagoMod.Source;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -15,12 +17,20 @@ namespace Smol_Ame_Archipelago
         static string RegionName;
         Dictionary<string, bool> ItemsCollectedInTheRegion;
         Dictionary<string, bool> LocationsCollectedInTheRegion;
-        TokenScript[] Bubba;
+        TokenScript[] APCoins;
         LevelClearButton[] MOMButtons;
+        
+        int lastStache = -1;
 
         void Awake() 
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        void Start()
+        {
+            if (GetRegionName(SceneManager.GetActiveScene().name) == "Hub")
+                StartCoroutine(ActivateHubEmptiesWhenReady());
         }
 
         private void OnDestroy()
@@ -32,9 +42,35 @@ namespace Smol_Ame_Archipelago
         {
             RegionName = null;
             ItemsCollectedInTheRegion = null;
-            Bubba = null;
+            APCoins = null;
 
             StartCoroutine(InitializeRegion(Scene.name));
+        }
+
+        IEnumerator ActivateHubEmptiesWhenReady()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+
+            for (int frame = 0; ; frame++)
+            {
+                var m = LevelEmptyManager.manager;
+                if (m != null && m.empties != null && m.empties.Any()) break;
+
+                if (!scene.isLoaded) yield break;   // we left the scene while waiting
+                if (frame > 600)                    // roughly 10 seconds
+                {
+                    Dbg.Warn("Region", "LevelEmptyManager never became ready");
+                    yield break;
+                }
+                yield return null;
+            }
+
+            yield return null;   // one more frame so the manager's own Start has finished
+
+            if (!scene.isLoaded || LevelEmptyManager.manager == null) yield break;
+
+            foreach (var empty in LevelEmptyManager.manager.empties)
+                if (empty != null) empty.gameObject.SetActive(true);
         }
 
         private IEnumerator InitializeRegion(string sceneName)
@@ -51,28 +87,25 @@ namespace Smol_Ame_Archipelago
 
             if (string.Equals(RegionName, "Hub"))
             {
-                foreach (var empty in LevelEmptyManager.manager.empties)
-                {
-                    empty.gameObject.SetActive(true);
-                }
+                StartCoroutine(ActivateHubEmptiesWhenReady());  
             }
             else
             {
                 if (SmolAmeData.Session == null || !SmolAmeData.Session.Socket.Connected)
                 {
-                    InfoHUD.Set("Session is not connected... Switching back to the Hub");
+                    HUD.Set("Session is not connected... Switching back to the Hub");
                     LevelLoader.loader.LoadLevel(0);
                 }
                 
             }
 
             // Find Bubba tokens in the scene.
-            var bubbas = FindObjectsOfType<TokenScript>();
-            Bubba = new TokenScript[bubbas.Length];
+            var apCoins = FindObjectsOfType<TokenScript>();
+            APCoins = new TokenScript[apCoins.Length];
 
-            foreach (var bubba in bubbas)
+            foreach (var coin in apCoins)
             {
-                Bubba[bubba.tokenNum] = bubba;
+                APCoins[coin.tokenNum] = coin;
             }
 
             MOMButtons = FindObjectsOfType<LevelClearButton>();
@@ -86,20 +119,20 @@ namespace Smol_Ame_Archipelago
                 ChangeGameObjectState(button.gameObject, false);
             }
 
-            // Process Bubba tokens.
-            foreach (var token in Bubba)
+            // Process APCoins.
+            for (int i = 0; i < SmolAmeData.APCoins.Length; i++)
             {
-                if (token == null)
-                    continue;
-
-                ChangeGameObjectState(token.gameObject, false);
+                SmolAmeData.APCoins[i] = false;
+                HUD.ReplaceTexture(APCoins[i], SmolAmeData.APCoinTexture); 
             }
+            if (LevelManager.levelManager != null)
+                Dbg.Info("Region", $"{RegionName}: moustaches {LevelManager.levelManager.collectedMoustaches}/{LevelManager.levelManager.moustacheQuotaInt}");
 
             OnItemReceived();
 
             // Ensure the region location data exists.
-            if (SmolAmeData.AreaLocationCollected == null ||
-                !SmolAmeData.AreaLocationCollected.TryGetValue(
+            if (SmolAmeData.AreaChecksCollected == null ||
+                !SmolAmeData.AreaChecksCollected.TryGetValue(
                     RegionName, out LocationsCollectedInTheRegion))
             {
                 yield break;
@@ -124,19 +157,19 @@ namespace Smol_Ame_Archipelago
                 switch (locationName)
                 {
                     case "Bubba Coin 1":
-                        SetBubbaDead(0, true);
+                        SetAPCoinDead(0, location.Value);
                         break;
 
                     case "Bubba Coin 2":
-                        SetBubbaDead(1, true);
+                        SetAPCoinDead(1, location.Value);
                         break;
 
                     case "Bubba Coin 3":
-                        SetBubbaDead(2, true);
+                        SetAPCoinDead(2, location.Value);
                         break;
 
                     case "Stache Quota":
-                        SetStacheQuota(true);
+                        SetStacheQuota(location.Value);
                         break;
                 }
             }
@@ -154,19 +187,18 @@ namespace Smol_Ame_Archipelago
             // Sending Bubba Checks
             for (int i = 0; i < 3; i++)
             {
-                if (LevelManager.levelManager.bubbaTokens != null)
+                if (SmolAmeData.APCoins != null)
                 {
-                    if (LevelManager.levelManager.bubbaTokens[i])
+                    if (SmolAmeData.APCoins[i])
                     {
                         string coinName = $"Bubba Coin {i + 1}";
-                        string locationName = $"{RegionName}-{coinName}";
                         if (LocationsCollectedInTheRegion.TryGetValue(
                             coinName, out bool alreadyCollected) &&
                             !alreadyCollected)
                         {
                             LocationsCollectedInTheRegion[coinName] = true;
                             SmolAmeData.BubbaCollected++;
-                            SendLocationCheck(locationName);
+                            SendLocationCheck(coinName);
                         }
                     }
                 }
@@ -176,7 +208,6 @@ namespace Smol_Ame_Archipelago
             if (LevelManager.levelManager.collectedMoustaches >= LevelManager.levelManager.moustacheQuotaInt)
             {
                 string stacheQuota = "Stache Quota";
-                string locationName = $"{RegionName}-{stacheQuota}";
                 if (LocationsCollectedInTheRegion.TryGetValue(
                     stacheQuota, out bool alreadyCollected) &&
                 !alreadyCollected)
@@ -184,7 +215,7 @@ namespace Smol_Ame_Archipelago
                     LocationsCollectedInTheRegion[stacheQuota] = true;
                     SmolAmeData.StacheQuotaCollected++;
                     
-                    SendLocationCheck(locationName);
+                    SendLocationCheck(stacheQuota);
                 }
 
             }
@@ -213,38 +244,66 @@ namespace Smol_Ame_Archipelago
             if (SmolAmeData.Session == null)
                 return;
 
-            if (MOMButtons != null && MOMButtons.Length > 0 &&
-                MOMButtons[0] != null &&
-                ItemsCollectedInTheRegion.TryGetValue(
-                    "MOM Button 1", out bool mom1Collected))
-            {
-                ChangeGameObjectState(MOMButtons[0].gameObject, mom1Collected);
-            }
-
-            if (MOMButtons != null && MOMButtons.Length > 1 &&
-                MOMButtons[1] != null &&
-                ItemsCollectedInTheRegion.TryGetValue(
-                    "MOM Button 2", out bool mom2Collected))
-            {
-                ChangeGameObjectState(MOMButtons[1].gameObject, mom2Collected);
-            }
-
-            // Enable or disable Bubba coins.
-            if (Bubba == null)
+            if  (MOMButtons ==  null)
                 return;
 
-            for (int i = 0; i < Bubba.Length && i < 3; i++)
+            if (MOMButtons.Length <= 0)
+                return;
+
+            if (MOMButtons[0] == null) 
+                return;
+
+            // MOM Button Received
+            if (string.Equals(RegionName, "Inumore") ||
+                string.Equals(RegionName, "BauDol"))
             {
-                if (Bubba[i] == null)
-                    continue;
+                if (ItemsCollectedInTheRegion.TryGetValue(
+                    "MOM Button 1 Unlock", out bool mom1Collected))
+                {
+                    ChangeGameObjectState(MOMButtons[0].gameObject, mom1Collected);
+                }
+
+                if (MOMButtons.Length > 1 &&
+                    MOMButtons[1] != null &&
+                    ItemsCollectedInTheRegion.TryGetValue(
+                        "MOM Button 2 Unlock", out bool mom2Collected))
+                {
+                    ChangeGameObjectState(MOMButtons[1].gameObject, mom2Collected);
+                }
+            }
+            else
+            {
+                if(ItemsCollectedInTheRegion.TryGetValue(
+                    "MOM Button Unlock", out bool mom1Collected))
+                {
+                    ChangeGameObjectState(MOMButtons[0].gameObject, mom1Collected);
+                }
+            }
+
+            // Bubba Coin received
+            for (int i = 0; i < 3; i++)
+            {
 
                 string itemName = $"Bubba Coin {i + 1}";
 
                 if (ItemsCollectedInTheRegion.TryGetValue(
                     itemName, out bool coinReceived))
                 {
-                    ChangeGameObjectState(Bubba[i].gameObject, coinReceived);
+                    LevelManager.levelManager.bubbaTokens[i] = coinReceived;
                 }
+            }
+
+            // Filler items
+            if (SmolAmeData.AreaItemCollected["General"]["Moustache"])
+            {
+                LevelManager.levelManager.collectedMoustaches++;
+                SmolAmeData.AreaItemCollected["General"]["Moustache"] = false;
+            }
+
+            if (SmolAmeData.AreaItemCollected["General"]["10 Moustache"])
+            {
+                LevelManager.levelManager.collectedMoustaches += 10;
+                SmolAmeData.AreaItemCollected["General"]["10 Moustache"] = false;
             }
         }
 
@@ -253,19 +312,16 @@ namespace Smol_Ame_Archipelago
             return SmolAmeData.SceneNametoCommonName.TryGetValue(sceneName, out var name) ? name : null;
         }
 
-        void SendLocationCheck(string locationName)
+        void SendLocationCheck(string checkName)
         {
             if (SmolAmeData.Session == null)
             {
                 return;
             }
 
-            if (!SmolAmeData.LocationNameToID.TryGetValue(locationName, out int id))
-            {
-                return;
-            }
-            InfoHUD.Set($"Collected {locationName}");
-            SmolAmeData.Session.Locations.CompleteLocationChecks(id);
+            int ID = SmolAmeData.RegionsData[RegionName].Checks[checkName];
+            HUD.Set($"Collected {checkName} in {RegionName}");
+            SmolAmeData.Session.Locations.CompleteLocationChecks(ID);
         }
 
         private void ChangeGameObjectState(GameObject gameObject, bool collected)
@@ -281,19 +337,19 @@ namespace Smol_Ame_Archipelago
         private static readonly FieldInfo VictoryField =
             AccessTools.Field(typeof(LevelClearButton), "victory");
 
-        private void SetBubbaDead(int index, bool value)
+        private void SetAPCoinDead(int index, bool value)
         {
-            if (Bubba == null || index >= Bubba.Length)
+            if (APCoins == null || index >= APCoins.Length)
             {
                 return;
             }
 
-            if (Bubba[index] == null || DeadField == null)
+            if (APCoins[index] == null || DeadField == null)
             {
                 return;
             }
 
-            DeadField.SetValue(Bubba[index], value);
+            DeadField.SetValue(APCoins[index], value);
         }
 
         private void CheckMomButtonPressed()
@@ -301,6 +357,7 @@ namespace Smol_Ame_Archipelago
             if (MOMButtons == null || VictoryField == null)
                 return;
 
+            CheckMomButton(0, "MOM Button");
             CheckMomButton(0, "MOM Button 1");
             CheckMomButton(1, "MOM Button 2");
         }
@@ -319,7 +376,7 @@ namespace Smol_Ame_Archipelago
                 return;
 
             LocationsCollectedInTheRegion[buttonName] = true;
-            SendLocationCheck($"{RegionName}-{buttonName}");
+            SendLocationCheck(buttonName);
             SmolAmeData.MOMButtonsPressed.Add(RegionName);
         }
 
@@ -331,6 +388,45 @@ namespace Smol_Ame_Archipelago
             {
                 LevelManager.levelManager.collectedMoustaches = LevelManager.levelManager.moustacheQuotaInt;
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(TokenScript), "Update")]
+    public static class TokenScript_Update_Patch
+    {
+        static IEnumerable<CodeInstruction> Transpiler(
+            IEnumerable<CodeInstruction> instructions)
+        {
+            var codes = new List<CodeInstruction>(instructions);
+
+            var tokensField = AccessTools.Field(typeof(LevelManager), "bubbaTokens");
+            var replacementField = AccessTools.Field(
+                typeof(SmolAmeData), nameof(SmolAmeData.APCoins));
+
+            int patched = 0;
+
+            for (int i = 0; i < codes.Count; i++)
+            {
+                if (!codes[i].LoadsField(tokensField))
+                    continue;
+
+                // ldfld consumed the LevelManager reference; ldsfld doesn't.
+                // Pop it first so the stack stays balanced.
+                // Reusing this instruction keeps any labels/blocks attached to it.
+                codes[i].opcode = OpCodes.Pop;
+                codes[i].operand = null;
+
+                codes.Insert(i + 1, new CodeInstruction(OpCodes.Ldsfld, replacementField));
+
+                i++;        // skip the instruction we just inserted
+                patched++;
+            }
+
+            if (patched == 0)
+                UnityEngine.Debug.LogError(
+                    "[BepInEx] Failed to find bubbaTokens field in TokenScript.Update!");
+
+            return codes;
         }
     }
 }

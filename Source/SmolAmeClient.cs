@@ -6,6 +6,7 @@ using Archipelago.MultiClient.Net.Models;
 using SmolAmeArchipelagoMod.Source;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace SmolAmeArchipelago
 {
@@ -19,21 +20,21 @@ namespace SmolAmeArchipelago
         {
             if (string.IsNullOrWhiteSpace(server))
             {
-                InfoHUD.Set(
+                HUD.Set(
                     "Archipelago server address is empty.");
                 return false;
             }
 
             if (port < 1 || port > 65535)
             {
-                InfoHUD.Set(
+                HUD.Set(
                     $"Invalid port: {port}");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(user))
             {
-                InfoHUD.Set(
+                HUD.Set(
                     "Archipelago slot name is empty.");
                 return false;
             }
@@ -61,24 +62,27 @@ namespace SmolAmeArchipelago
                 {
                     LoginFailure failure = (LoginFailure)result;
 
-                    InfoHUD.Set(
+                    HUD.Set(
                         $"Failed to connect to {server}:{port} " +
                         $"as '{user}'.");
 
                     foreach (string error in failure.Errors)
-                        InfoHUD.Set(error);
+                        HUD.Set(error);
 
                     foreach (ConnectionRefusedError error
                              in failure.ErrorCodes)
-                        InfoHUD.Set(error.ToString());
+                        HUD.Set(error.ToString());
 
                     SmolAmeData.Session = null;
                     return false;
                 }
 
-                InfoHUD.Set(
+                HUD.Set(
                     $"Successfully connected to {server}:{port} " +
                     $"as '{user}'.");
+                PlayerPrefs.SetString("server", server);
+                PlayerPrefs.SetInt("port", port);
+                PlayerPrefs.SetString("slot", user);
                 SmolAmeData.Result = (LoginSuccessful)result;
                 LoadSlotData(SmolAmeData.Result.SlotData);
 
@@ -101,7 +105,7 @@ namespace SmolAmeArchipelago
 
         private static void OnSocketClosed(string reason)
         {
-            InfoHUD.Set($"Session Disconnected. Moving to Hub and attempting to reconnect...");
+            HUD.Set($"Session Disconnected. Moving to Hub and attempting to reconnect...");
             LevelLoader.loader.LoadLevel(0);
             
             TryConnect(SmolAmeData.Server, SmolAmeData.Port, SmolAmeData.Slot, SmolAmeData.Password);
@@ -122,7 +126,7 @@ namespace SmolAmeArchipelago
 
             if (!int.TryParse(PauseScreenPatch.Port.text, out SmolAmeData.Port))
             {
-                InfoHUD.Set("[Archipelago Client] Cannot connect to server, Port should be only numbers");
+                HUD.Set("[Archipelago Client] Cannot connect to server, Port should be only numbers");
             }
 
             SmolAmeData.Slot = PauseScreenPatch.Slot.text;
@@ -145,7 +149,7 @@ namespace SmolAmeArchipelago
             }
             catch (Exception ex)
             {
-                InfoHUD.Set($"[Archipelago Client] Could not connect: {ex.Message}");
+                HUD.Set($"Could not connect: {ex.Message}");
             }
         }
 
@@ -172,8 +176,8 @@ namespace SmolAmeArchipelago
 
             foreach (Int64 location in locations)
             {
-                var locationName = SmolAmeData.LocationIDToName[(int)location];
-                PutReceivedLocationInSmolAme(locationName);
+                var locationName = SmolAmeData.LocationIDToCheck[(int)location];
+                PutReceivedLocationInSmolAme(locationName.Item1, locationName.Item2);
             }
         }
 
@@ -187,31 +191,21 @@ namespace SmolAmeArchipelago
                 string itemName = parts[1];
 
                 SmolAmeData.AreaItemCollected[regionName][itemName] = true;
-                
-                string displayName = itemName;
 
-                // Regions with a single MOM button don't need the "1" in the message
-                if (itemName.Contains("MOM Button") &&
-                    !SmolAmeData.AreaItems[regionName].ContainsKey("MOM Button 2"))
+                if (string.Equals(regionName, "General"))
                 {
-                    displayName = "MOM Button";
+                    HUD.Set($"Received {itemName} from {item.Player.Name}");
                 }
-
-                InfoHUD.Set($"Received {displayName} in {regionName}");
+                else
+                {
+                    HUD.Set($"Received {itemName} in {regionName} from {item.Player.Name}");
+                }
             }
         }
 
-        static void PutReceivedLocationInSmolAme(string locationName)
+        static void PutReceivedLocationInSmolAme(string regionName, string checkName)
         {
-            string[] parts = locationName.Split(new[] { '-' }, 2);
-
-            if (parts.Length == 2)
-            {
-                string regionName = parts[0];
-                string location = parts[1];
-
-                SmolAmeData.AreaLocationCollected[regionName][location] = true;
-            }
+            SmolAmeData.AreaChecksCollected[regionName][checkName] = true;
         }
 
         public static void LoadSlotData(Dictionary<string, object> slotData)

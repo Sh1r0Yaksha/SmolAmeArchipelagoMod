@@ -1,6 +1,8 @@
 ﻿using Archipelago.MultiClient.Net;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace SmolAmeArchipelagoMod.Source
 {
@@ -9,6 +11,18 @@ namespace SmolAmeArchipelagoMod.Source
         AllStages = 0,
         Bubba = 1,
         CC = 2
+    }
+
+    public class RegionData
+    {
+        public Dictionary<string, int> Items { get; set; }
+        public Dictionary<string, int> Checks { get; set; }
+
+        public RegionData() 
+        {
+            Items = new Dictionary<string, int>();
+            Checks = new Dictionary<string, int>();
+        }
     }
 
     internal static class SmolAmeData
@@ -34,13 +48,18 @@ namespace SmolAmeArchipelagoMod.Source
         internal static int CAStachQuotaCount = 10;
         internal static int StacheQuotaCollected = 0;
 
-        internal static bool Disconnected;
+        internal static Sprite APCoinSprite;
+        internal static Texture2D APCoinTexture;
+        internal static GameObject APsEmpty;
+        internal static Animator[] APAnims;
+        internal static bool[] APCoins = new bool[3];
 
         internal static readonly HashSet<string> NonLevelRegions =
             new HashSet<string> { "Hub", "Character Select" };
 
 
-        internal static Dictionary<string, Dictionary<string, string>> AreaItems;
+        //internal static Dictionary<string, Dictionary<string, string>> AreaItems;
+        internal static Dictionary<string, RegionData> RegionsData;
 
         internal static Dictionary<string, string> BaseGameNameToSceneName =
             new Dictionary<string, string>()
@@ -89,10 +108,8 @@ namespace SmolAmeArchipelagoMod.Source
                 pair => pair.Key
             );
 
-        internal static Dictionary<string, Dictionary<string, bool>> AreaItemCollected;
-        internal static Dictionary<string, Dictionary<string, bool>> AreaLocationCollected;
-
-        internal static Dictionary<string, int> LocationNameToID;
-        internal static Dictionary<int, string> LocationIDToName;
+        internal static Dictionary<string, Dictionary<string, bool>> AreaItemCollected = new Dictionary<string, Dictionary<string, bool>>();
+        internal static Dictionary<string, Dictionary<string, bool>> AreaChecksCollected = new Dictionary<string, Dictionary<string, bool>>();
+        internal static Dictionary<int, Tuple<string, string>> LocationIDToCheck = new Dictionary<int, Tuple<string, string>>();
     }
 }
