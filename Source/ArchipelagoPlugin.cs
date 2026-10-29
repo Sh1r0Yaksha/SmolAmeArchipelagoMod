@@ -16,7 +16,7 @@ namespace SmolAmeArchipelago
     {
         public const string GUID = "com.Shir0Yaksha.SmolAmeArchipelagoMod";
         public const string NAME = "Smol Ame Archipelago Plugin";
-        public const string VERSION = "0.3.0";
+        public const string VERSION = "1.0.0";
 
         internal static RegionSyncController RegionSync;
 
